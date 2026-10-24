@@ -1,0 +1,6 @@
+{
+  "name": "Smart PDF English Tutor",
+  "description": "Read PDFs with instant Urdu script, Roman Urdu, English synonyms, simple explanations, local vocabulary notebook, and optional AI translation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
