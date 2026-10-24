@@ -10,19 +10,5 @@ steps:
 - name: Checkout repository
 uses: actions/checkout@v4
 
-  - name: Set up Java
-    uses: actions/setup-java@v4
-    with:
-      distribution: temurin
-      java-version: '17'
-
-  - name: Build APK
-    run: |
-      gradle assembleDebug
-
-  - name: Upload APK
-    uses: actions/upload-artifact@v4
-    with:
-      name: Smart-123-APK
-      path: app/build/outputs/apk/debug/*.apk
-      if-no-files-found: error
+  - name: Check project files
+    run: ls -la
