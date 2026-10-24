@@ -1,0 +1,50 @@
+name: Build Android APK
+
+on:
+workflow_dispatch:
+
+jobs:
+build:
+runs-on: ubuntu-latest
+
+steps:
+  - name: Download repository
+    uses: actions/checkout@v4
+
+  - name: Extract Android project ZIP
+    run: |
+      ZIP_FILE=$(find . -maxdepth 1 -type f -name "*.zip" | head -n 1)
+      if [ -z "$ZIP_FILE" ]; then
+        echo "ERROR: No ZIP file found in repository root."
+        exit 1
+      fi
+      mkdir android-project
+      unzip -q "$ZIP_FILE" -d android-project
+      echo "Extracted files:"
+      ls -la android-project
+
+  - name: Set up Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: "17"
+
+  - name: Build APK
+    run: |
+      cd android-project
+      GRADLE_FILE=$(find . -name gradlew -type f | head -n 1)
+      if [ -z "$GRADLE_FILE" ]; then
+        echo "ERROR: Gradle wrapper (gradlew) not found in ZIP."
+        exit 1
+      fi
+      chmod +x "$GRADLE_FILE"
+      cd "$(dirname "$GRADLE_FILE")"
+      ./gradlew assembleDebug
+
+  - name: Upload APK
+    if: success()
+    uses: actions/upload-artifact@v4
+    with:
+      name: smart-pdf-english-tutor-apk
+      path: android-project/**/build/outputs/apk/debug/*.apk
+      if-no-files-found: error
