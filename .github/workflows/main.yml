@@ -1,7 +1,17 @@
 name: Build Android APK
-'on': Workflow_dispatch: {}
-jobs: build: runs-on: ubuntu-latest steps: - name: Checkout repository uses: actions/checkout@v4
-- name: Set up Java
+
+'on':
+workflow_dispatch:
+
+jobs:
+build:
+runs-on: ubuntu-latest
+
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+
+  - name: Set up Java
     uses: actions/setup-java@v5
     with:
       distribution: temurin
@@ -10,11 +20,12 @@ jobs: build: runs-on: ubuntu-latest steps: - name: Checkout repository uses: act
   - name: Set up Gradle
     uses: gradle/actions/setup-gradle@v4
 
-  - name: Check Gradle files
+  - name: Show project files
     run: |
-      find . -maxdepth 5 -type f -name "build.gradle" -o -name "build.gradle.kts" -o -name "settings.gradle" -o -name "settings.gradle.kts"
+      echo "Checking Android project"
+      find . -maxdepth 5 -type f
 
-  - name: Build APK
+  - name: Build Android APK
     run: gradle assembleDebug
 
   - name: Upload APK
