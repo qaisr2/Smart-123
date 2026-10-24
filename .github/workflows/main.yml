@@ -1,34 +1,31 @@
 name: Build Android APK
 
 'on':
-  workflow_dispatch:
+workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+build:
+runs-on: ubuntu-latest
 
-      - name: List ZIP files
-        run: |
-          echo "Checking repository files"
-          ls -la
-          find . -maxdepth 2 -type f -name "*.zip"
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
 
-      - name: Extract project ZIP
-        run: |
-          ZIP_FILE=$(find . -maxdepth 1 -type f -name "*.zip" | head -n 1)
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: ZIP file not found in repository root"
-            exit 1
-          fi
-          mkdir project
-          unzip -q "$ZIP_FILE" -d project
-          find project -maxdepth 4 -type f | head -100
+  - name: Set up Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '17'
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
+  - name: Set up Gradle
+    uses: gradle/actions/setup-gradle@v4
+
+  - name: Build APK
+    run: gradle assembleDebug
+
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: Smart-123-APK
+      path: app/build/outputs/apk/debug/*.apk
+      if-no-files-found: error
