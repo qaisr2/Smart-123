@@ -19,44 +19,34 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
 
-      - name: Find Android project folder
-        id: find
+      - name: Extract project from zip
         run: |
-          echo "All gradle files:"
-          find . -maxdepth 4 \( -name "gradlew" -o -name "settings.gradle" -o -name "settings.gradle.kts" \) -not -path "*/node_modules/*"
+          mkdir -p extracted
+          unzip -q ./*.zip -d extracted
+          echo "Extracted files:"
+          find extracted -maxdepth 3 | head -n 60
 
-          if [ -f "./gradlew" ]; then
-            DIR="."
-          else
-            DIR=$(dirname "$(find . -maxdepth 4 -name gradlew -not -path '*/node_modules/*' | head -n 1)")
+          SETTINGS=$(find extracted -maxdepth 3 \( -name settings.gradle -o -name settings.gradle.kts \) | head -n 1)
+          if [ -z "$SETTINGS" ]; then
+            echo "settings.gradle not found inside zip"
+            exit 1
           fi
+          PROJECT_DIR=$(dirname "$SETTINGS")
+          echo "Project dir: $PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
 
-          if [ -z "$DIR" ] || [ "$DIR" = "." ] && [ ! -f "./gradlew" ]; then
-            echo "gradlew not found. Using system gradle."
-            DIR=$(dirname "$(find . -maxdepth 4 \( -name settings.gradle -o -name settings.gradle.kts \) | head -n 1)")
-            echo "use_system_gradle=true" >> $GITHUB_OUTPUT
-          else
-            echo "use_system_gradle=false" >> $GITHUB_OUTPUT
-          fi
-
-          echo "Project dir: $DIR"
-          echo "dir=$DIR" >> $GITHUB_OUTPUT
-
-      - name: Accept Android SDK licenses
-        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
-
-      - name: Build with gradlew
-        if: steps.find.outputs.use_system_gradle == 'false'
-        working-directory: ${{ steps.find.outputs.dir }}
+      - name: Build Android APK
         run: |
-          chmod +x ./gradlew
-          ./gradlew assembleDebug --stacktrace --no-daemon
-
-      - name: Build with system gradle (fallback)
-        if: steps.find.outputs.use_system_gradle == 'true'
-        working-directory: ${{ steps.find.outputs.dir }}
-        run: gradle assembleDebug --stacktrace --no-daemon
+          cd "$PROJECT_DIR"
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug --stacktrace
+          else
+            gradle assembleDebug --stacktrace
+          fi
 
       - name: List generated APKs
         if: always()
@@ -66,14 +56,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Smart-123-APK
-          path: '**/build/outputs/apk/debug/*.apk'
+          path: 'extracted/**/build/outputs/apk/debug/*.apk'
           if-no-files-found: error
-
-      - name: Upload build reports (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-reports
-          path: |
-            **/build/reports/**
-          if-no-files-found: ignore
